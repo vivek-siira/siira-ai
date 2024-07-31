@@ -15,15 +15,11 @@ load_dotenv()
 model_name = "gpt-4o"
 temperature_value = 0.2
 
-def init_database() -> SQLDatabase:
-    user = os.getenv('DB_USER')
-    password = os.getenv('DB_PASSWORD')
-    host = os.getenv('DB_HOST')
-    port = os.getenv('DB_PORT')
-    database = os.getenv('DB_DATABASE')
 
-    # Update the connection URI for SQL Server
-    db_uri = f"mssql+pyodbc://{user}:{password}@{host}:{port}/{database}?driver=ODBC+Driver+17+for+SQL+Server"
+def init_database(host, port, user, password, database) -> SQLDatabase:
+
+    # Update the connection URI for Postgres
+    db_uri = f"postgresql://{user}:{password}@localhost:{port}/{database}"
     return SQLDatabase.from_uri(db_uri)
 
 def get_sql_chain(db):
@@ -54,6 +50,7 @@ def get_sql_chain(db):
     llm = ChatOpenAI(model=model_name, temperature=temperature_value)
     
     def get_schema(_):
+        print(db.get_table_info())
         return db.get_table_info()
     
     return (
@@ -130,17 +127,17 @@ st.title("Chat with Siira AI")
 
 with st.sidebar:
     st.subheader("Settings")
-    st.write("This is a simple chat application using SQL Server. Connect to the database and start chatting.")
+    st.write("This is a simple chat application using Postgres Server. Connect to the database and start chatting.")
     
-    st.text_input("Host", value=os.getenv('DB_HOST'), key="Host")
-    st.text_input("Port", value=os.getenv('DB_PORT'), key="Port")
-    st.text_input("User", value=os.getenv('DB_USER'), key="User")
-    st.text_input("Password", type="password", value=os.getenv('DB_PASSWORD'), key="Password")
-    st.text_input("Database", value=os.getenv('DB_DATABASE'), key="Database")
+    host = st.text_input("Host")
+    port = st.text_input("Port")
+    user = st.text_input("User")
+    password = st.text_input("Password")
+    database = st.text_input("Database")
     
     if st.button("Connect"):
         with st.spinner("Connecting to database..."):
-            db = init_database()
+            db = init_database(host, port, user, password, database)
             st.session_state.db = db
             st.success("Connected to database!")
 
