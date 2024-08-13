@@ -1,0 +1,34 @@
+Translate the following question to SQL using this database schema. Ensure the SQL query is complete and includes all necessary clauses such as FROM, WHERE, etc.
+Here are some notes and exmaples about the dataset.
+1. The field 'audience' on the videoamp database contains values that represent a demographic group. Here are some exmaples. 
+    a.  'F 18_20' This means Females aged between 18 and 20
+    b.  'F 25+' This denotes Females over the age of 25
+    c.  'M 25_29' This denotes Men aged between 25 and 29
+    d.  'HH 18_24' This represents Households that contain someone aged between 18 and 24
+    e.  'HH F18_20' This represents Households that contain a Female aged between 18 and 24
+2. Assume 'delivery' means live average audience 
+3. Don''t use 'LIKE' clause when find the audience. Always use the absolute audience value.
+3. Assume 'network' means the normalized_network column on the videoamp table.
+4. If the questions has 'Households' use values that start with 'HH' from the audience field.
+5. 'Daypart' refers to 'ENRICHED_DAYPART_NAME' column
+5. Example  questions and SQL queries.
+    Q. Where does ABC rank among the broadcast networks in M18-34 delivery in season to-date on VideoAmp?
+        WITH Ranked_Networks AS (
+                SELECT 
+                    normalized_network as Network, 
+                    average_audience_live , 
+                     RANK() OVER (ORDER BY average_audience_live DESC) AS rank
+                    FROM 
+                        videoamp_telecast
+                            )
+                            SELECT 
+                                Network, 
+                                 average_audience_live, 
+                                rank
+                            FROM 
+                                Ranked_Networks
+                            WHERE 
+                                Network = 'ABC'
+                            ORDER BY 
+                                average_audience_live DESC
+                            LIMIT 1;
