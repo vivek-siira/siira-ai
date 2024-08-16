@@ -29,6 +29,12 @@ with open('sample_questions.txt', 'r') as file:
 with open('sample_graph.py', 'r') as file:
   sample_graph = file.read()
 
+#chatGPT settings
+
+model = 'gpt-4'
+temperature = 0.2
+
+
 # Function to fetch the database schema
 def get_db_schema():
     engine = sqlalchemy.create_engine(DATABASE_URL)
@@ -51,13 +57,13 @@ def get_sql_from_gpt(question, schema):
     schema_str = "\n".join([f"Table {table}: {', '.join(columns)}" for table, columns in schema.items()])
     prompt = f"{prompt_sql} Provide only the SQL query without any additional text:\n{schema_str}\nQuestion: {question}"
     response = openai.ChatCompletion.create(
-        model="gpt-4",
+        model=model,
         messages=[
             {"role": "system", "content": "You are a helpful assistant that translates natural language questions into complete SQL queries."},
             {"role": "user", "content": prompt}
         ],
         max_tokens=150,
-        temperature=0.5,
+        temperature=temperature,
     )
     sql_query = response['choices'][0]['message']['content'].strip()
 
@@ -86,13 +92,13 @@ def get_visualization_and_insights(dataframe):
     prompt = f"The following is a dataset from an SQL query. Based on the data and provide 1 or 2 insights:\n{csv_data}."
     
     response = openai.ChatCompletion.create(
-        model="gpt-4",
+        model=model,
         messages=[
             {"role": "system", "content": "You are a data analyst who can analyze datasets and generate meaningful visualizations and insights."},
             {"role": "user", "content": prompt}
         ],
         max_tokens=300,
-        temperature=0.5,
+        temperature=temperature,
     )
     
     analysis = response['choices'][0]['message']['content'].strip()
@@ -107,7 +113,7 @@ def generate_graph_code(dataframe):
                  The DataFrame 'csv_data' is already loaded. 
                  Don't try to load a file. The data is already loaded in {csv_data}.
                  Do not attempt to load any CSV files or reference any variables not defined.
-                 Please don't add any pretext. Just return the Python code only.
+                 Just return the Python code only. Don't add any pretext. 
                  Always sort the data in descending order.
                  Don't save the plot as a PNG file and display the image. Directly display the plot using st.pyplot().
                  Never use plt.barh().
@@ -116,17 +122,17 @@ def generate_graph_code(dataframe):
                  Rotate the x-axis labels to 45 for better readability. 
                  Don't display any warnings. 
                  Always use 'blue' for bar charts.
-                 If the dataset is too small just write code to display "Not enough data for a graph"
+                 If the dataset is too small just write code to display "Not enough data"
                  """
     
     response = openai.ChatCompletion.create(
-        model="gpt-4",
+        model=model,
         messages=[
             {"role": "system", "content": "You are a data analyst who can analyze datasets and generate meaningful visualizations and insights."},
             {"role": "user", "content": prompt}
         ],
         max_tokens=500,
-        temperature=0.5,
+        temperature=temperature,
     )
 
     # Extract the generated code
@@ -169,16 +175,18 @@ if st.button("Get SQL"):
             schema = get_db_schema()
             sql_query = get_sql_from_gpt(question, schema)
             st.session_state.sql_query = sql_query  # Store the SQL query in session state
+
+            # Clear previous results, insights, and visualizations
+            st.session_state.sql_result = None
+            st.session_state.insights = None
     else:
         st.warning("Please enter a question.")
 st.markdown('</div>', unsafe_allow_html=True)
 
-
 # Display the generated SQL query if it exists
 if 'sql_query' in st.session_state:
-    # Calculate the height of the text area based on the length of the SQL query
+    # Calculate the height of the text area based on the number of lines in the SQL query
     sql_lines = st.session_state.sql_query.count('\n') + 5
-    print(sql_lines)
     height = min(max(100, sql_lines * 20), 700)  # Adjust height based on number of lines, with limits
 
     # Editable text area for the SQL query
@@ -187,17 +195,19 @@ if 'sql_query' in st.session_state:
     # Update the session state with the edited SQL query
     st.session_state.sql_query = updated_sql_query
 
+# Container for the "Execute SQL" button
+st.markdown('<div class="button-container">', unsafe_allow_html=True)
 if 'sql_query' in st.session_state and st.button("Execute SQL"):
     with st.spinner('Executing SQL query...'):
         sql_query = st.session_state.sql_query
         result = execute_sql_query(sql_query)
-        if isinstance(result, pd.DataFrame):
+        if isinstance(result, pd.DataFrame) and not result.empty:
             st.session_state.sql_result = result  # Store the SQL result in session state
         else:
-            st.session_state.sql_result = pd.DataFrame({'Result': [str(result)]})  # Store error message in session state
+            st.session_state.sql_result = None  # Reset the result if no data or error
 
-# Display the result if it exists in session state
-if 'sql_result' in st.session_state:
+# Display the result if it exists and is not empty
+if 'sql_result' in st.session_state and st.session_state.sql_result is not None:
     st.table(st.session_state.sql_result)
 
 # Show "Visualize and Analyze" button if results are available
