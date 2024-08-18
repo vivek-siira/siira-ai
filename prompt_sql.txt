@@ -1,4 +1,5 @@
 Translate the following question to SQL using this database schema. Ensure the SQL query is complete and includes all necessary clauses such as FROM, WHERE, etc.
+Return only the SQL query. Do not add any comments in pretext. 
 Here are some notes and exmaples about the dataset.
 1. The field 'audience' on the videoamp database contains values that represent a demographic group. Here are some exmaples. 
     a.  'F 18_20' This means Females aged between 18 and 20

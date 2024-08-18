@@ -84,6 +84,13 @@ def execute_sql_query(query):
     connection.close()
     return result
 
+def sanitize_text(text):
+    # Replace unwanted characters
+    clean_text = text.replace('\n', ' ').replace('\r', '').replace(' ', ' ')
+    # Additional cleaning can be added here
+    return clean_text
+
+
 # Function to generate a graph and insights using GPT
 def get_visualization_and_insights(dataframe):
     # Convert DataFrame to CSV string for GPT processing
@@ -97,7 +104,7 @@ def get_visualization_and_insights(dataframe):
             {"role": "system", "content": "You are a data analyst who can analyze datasets and generate meaningful visualizations and insights."},
             {"role": "user", "content": prompt}
         ],
-        max_tokens=300,
+        max_tokens=1000,
         temperature=temperature,
     )
     
@@ -109,11 +116,12 @@ def generate_graph_code(dataframe):
     csv_data = dataframe
     print(csv_data)
     prompt = f"""The following is a dataset from an SQL query.Generate Python code to plot a suitable graph for Streamlit:\n\n{csv_data}\n\n.
+                 Return on;ly the python code. Don't add any pretext or comments.
+                 Don't add ```python. 
                  Use {sample_graph} as an example. 
                  The DataFrame 'csv_data' is already loaded. 
                  Don't try to load a file. The data is already loaded in {csv_data}.
                  Do not attempt to load any CSV files or reference any variables not defined.
-                 Just return the Python code only. Don't add any pretext. 
                  Always sort the data in descending order.
                  Don't save the plot as a PNG file and display the image. Directly display the plot using st.pyplot().
                  Never use plt.barh().
@@ -131,7 +139,7 @@ def generate_graph_code(dataframe):
             {"role": "system", "content": "You are a data analyst who can analyze datasets and generate meaningful visualizations and insights."},
             {"role": "user", "content": prompt}
         ],
-        max_tokens=500,
+        max_tokens=5000,
         temperature=temperature,
     )
 
@@ -208,7 +216,8 @@ if 'sql_query' in st.session_state and st.button("Execute SQL"):
 
 # Display the result if it exists and is not empty
 if 'sql_result' in st.session_state and st.session_state.sql_result is not None:
-    st.table(st.session_state.sql_result)
+    display_result = st.session_state.sql_result.reset_index(drop=True)
+    st.dataframe(display_result, hide_index=True)
 
 # Show "Visualize and Analyze" button if results are available
 if 'sql_result' in st.session_state:
@@ -218,7 +227,8 @@ if 'sql_result' in st.session_state:
             # Generate insights using GPT
             analysis = get_visualization_and_insights(st.session_state.sql_result)
             st.subheader("Insights")
-            st.write(analysis)
+            sanitized_insights = sanitize_text(analysis)
+            st.markdown(sanitized_insights)
             # Generate the graph code using the dataset description
             graph_code, csv_data = generate_graph_code(st.session_state.sql_result)
             print(csv_data)
