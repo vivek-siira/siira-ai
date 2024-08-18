@@ -33,3 +33,16 @@ Here are some notes and exmaples about the dataset.
                             ORDER BY 
                                 average_audience_live DESC NULLS LAST
                             LIMIT 1;
+    Q. What were the top 25 programs among women 18-34 based on delivery across broadcast and cable?
+         SELECT 
+            enriched_series_name AS Program, 
+            sum(average_audience_live) AS Delivery
+         FROM 
+            videoamp_telecast
+         WHERE 
+             audience = 'F 18_34'
+         GROUP by 
+              enriched_series_name 
+         ORDER BY 
+            average_audience_live DESC NULLS LAST
+         LIMIT 25;
