@@ -11,7 +11,7 @@ Here are some notes and exmaples about the dataset.
 3. Assume 'network' means the normalized_network column on the videoamp table.
 4. If the questions has 'Households' use values that start with 'HH' from the audience field.
 5. 'Daypart' refers to 'ENRICHED_DAYPART_NAME' column
-5. Example  questions and SQL queries.
+6. Example  questions and SQL queries.
     Q. Where does ABC rank among the broadcast networks in M18-34 delivery in season to-date on VideoAmp?
         WITH Ranked_Networks AS (
                 SELECT 
@@ -30,5 +30,5 @@ Here are some notes and exmaples about the dataset.
                             WHERE 
                                 Network = 'ABC'
                             ORDER BY 
-                                average_audience_live DESC
+                                average_audience_live DESC NULLS LAST
                             LIMIT 1;
