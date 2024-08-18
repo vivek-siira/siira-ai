@@ -227,8 +227,8 @@ if 'sql_result' in st.session_state:
             # Generate insights using GPT
             analysis = get_visualization_and_insights(st.session_state.sql_result)
             st.subheader("Insights")
-            sanitized_insights = sanitize_text(analysis)
-            st.markdown(sanitized_insights)
+            #sanitized_insights = sanitize_text(analysis)
+            st.write(analysis)
             # Generate the graph code using the dataset description
             graph_code, csv_data = generate_graph_code(st.session_state.sql_result)
             print(csv_data)
